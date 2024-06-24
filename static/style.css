@@ -1,0 +1,61 @@
+/* Basic body styles */
+body {
+    font-family: Arial, sans-serif;
+    background-color: #e1cbff;
+}
+
+/* Container styles */
+.container {
+    max-width: 800px;
+    margin: auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Form styles */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-control {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+.btn {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+}
+
+.btn:hover {
+    background-color: #0056b3;
+}
+
+/* Header styles */
+h1 {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+/* Error message styles */
+.error {
+    color: red;
+    font-size: 14px;
+}
+
+
+p {
+    font-size: 20px;
+    text-align: center;
+    margin-bottom: 20px;
+}
