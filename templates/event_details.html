@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Event Details</title>
+</head>
+<body>
+    <h1>Event Details</h1>
+    <h2>{{ event.event_name }}</h2>
+    <p>Date: {{ event.event_date }}</p>
+    <p>Time: {{ event.event_time }}</p>
+
+    <hr>
+    <h2>Posts</h2>
+    {% if posts %}
+        {% for post in posts %}
+            <div>
+                <p><strong>{{ post.name }}</strong> - {{ post.post_time.strftime('%Y-%m-%d %H:%M:%S') }}</p>
+                <p>{{ post.post_content }}</p>
+                {% if post.user_id == session['username'] %}
+                    <form method="POST" action="{{ url_for('edit_post', event_id=event.event_id, post_id=post.post_id) }}">
+                        <input type="submit" value="Edit Post">
+                    </form>
+                    <form method="POST" action="{{ url_for('delete_post', event_id=event.event_id, post_id=post.post_id) }}">
+                        <input type="submit" value="Delete Post">
+                    </form>
+                {% endif %}
+                <hr>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p>No posts available.</p>
+    {% endif %}
+
+    <hr>
+    <h2>New Post</h2>
+    <form method="POST" action="{{ url_for('new_post', event_id=event.event_id) }}">
+        <label for="post_content">Post Content:</label><br>
+        <textarea id="post_content" name="post_content" rows="4" cols="50" required></textarea><br><br>
+        <input type="submit" value="Create Post">
+    </form>
+</body>
+</html>
