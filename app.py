@@ -388,7 +388,7 @@ def remove_friend(friend_id):
 
     conn = connect_to_db()
     cursor = conn.cursor()
-
+    print(friend_id)
     try:
         # Retrieve friend's phone number from the users table
         cursor.execute("""
@@ -396,20 +396,25 @@ def remove_friend(friend_id):
             FROM event_scheduling.users
             WHERE user_id = %s;
         """, (friend_id,))
+        print(friend_id)
         friend_phone_number = cursor.fetchone()
+        
+        print("frienddd:",friend_phone_number)
 
         if friend_phone_number is None:
             flash('Friend not found.', 'error')
             return redirect(url_for('index'))
 
         friend_phone_number = friend_phone_number[0]
+        print(friend_phone_number)
 
         # Remove from users_have_friends table
         cursor.execute("""
             DELETE FROM event_scheduling.users_have_friends
             WHERE user_id = %s AND phone_number = %s;
         """, (username, friend_phone_number))
-
+        print(username)
+        print("ooyea:",friend_phone_number)
         # Remove from friends table
         cursor.execute("""
             DELETE FROM event_scheduling.friends
@@ -425,7 +430,6 @@ def remove_friend(friend_id):
         conn.close()
 
     return redirect(url_for('index'))
-
 
 
 @app.route('/add_friend/<friend_id>', methods=['POST'])
