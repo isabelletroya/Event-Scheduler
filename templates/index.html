@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body>
+    <a href="{{ url_for('feed') }}" class="btn btn-primary mt-3">View Events Feed</a>
+
     <div class="container mt-5">
         <h1 class="text-center mb-4">My Events</h1>
         <td><a href="{{ url_for('edit_user_info') }}" class="btn btn-primary">Edit User Info</a></td>
@@ -20,6 +22,7 @@
                         <th>Event Name</th>
                         <th>Event Date</th>
                         <th>Event Time</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -29,6 +32,32 @@
                         <td>{{ event[1] }}</td>
                         <td>{{ event[2] }}</td>
                         <td>{{ event[3] }}</td>
+                        <td>
+                            <!-- Action buttons -->
+                            <a href="#" class="btn btn-primary">View Details</a>
+                        </td>
+                    </tr>
+                    <!-- Event card for creating posts -->
+                    <tr>
+                        <td colspan="5">
+                            <div class="event-card">
+                                <h3>{{ event[1] }}</h3>
+                                <p>Date: {{ event[2] }} Time: {{ event[3] }}</p>
+                                <!-- Ensure the action attribute points to the correct Flask endpoint -->
+                                <form id="postForm{{ event[0] }}" method="POST" action="{{ url_for('create_post') }}">
+                                    <input type="hidden" name="event_id" value="{{ event[0] }}">
+                                    <textarea name="post_content" placeholder="Write your post here..." rows="4" cols="50"></textarea>
+                                    <br>
+                                    <input type="submit" value="Create Post" class="btn btn-primary">
+                                </form>
+
+                                <hr>
+
+                             
+
+
+                            </div>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -76,7 +105,7 @@
                     <tr>
                         <th>User ID</th>
                         <th>Name</th>
-                        <th>Friend ID</th>
+                        <th>Phone Number</th>
                         <th>Action</th>
                     </tr>
                 </thead>

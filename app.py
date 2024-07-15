@@ -48,6 +48,12 @@ def generate_event_id():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
 
 
+def generate_random_id(length=10):
+    """Generate a random alphanumeric ID of given length."""
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+
+
+
 def user_info_check(username, password):
     conn = connect_to_db()
     cursor = conn.cursor()
@@ -490,7 +496,90 @@ def add_friend(friend_id):
         conn.close()
 
     return redirect(url_for('index'))
+import logging
 
+@app.route('/create_post', methods=['POST'])
+def create_post():
+    username = session.get('username')
+    if not username:
+        return redirect(url_for('login'))
+
+    event_id = request.form.get('event_id')
+    post_content = request.form.get('post_content')
+
+    # Generate a random ID for post_id (assuming you have a function generate_random_id())
+    post_id = generate_random_id()
+
+    # Logging the received data for debugging
+    logging.debug(f"Received data: username={username}, event_id={event_id}, post_content={post_content}")
+
+    conn = connect_to_db()
+    cursor = conn.cursor()
+
+    try:
+        # Insert new post into the database
+        insert_query = """
+        INSERT INTO event_scheduling.posts (user_id, event_id, post_content, post_time, post_id)
+        VALUES (%s, %s, %s, NOW(), %s);
+        """
+        cursor.execute(insert_query, (username, event_id, post_content, post_id))
+        
+        insert_query2 = """
+        INSERT INTO event_scheduling.events_have_posts (event_id,post_id)
+        VALUES (%s, %s);
+        """
+        cursor.execute(insert_query2, (event_id,post_id))
+        conn.commit()
+
+        flash('Post created successfully!', 'success')
+    except Exception as e:
+        flash(f'Error creating post: {e}', 'error')
+        logging.error(f"Error creating post: {e}")
+    finally:
+        cursor.close()
+        conn.close()
+
+    return redirect(url_for('index'))
+
+@app.route('/feed')
+def feed():
+    username = session.get('username')
+    if not username:
+        return redirect(url_for('login'))
+
+    conn = connect_to_db()
+    cursor = conn.cursor()
+
+    try:
+        # Fetch posts from events where user is invited or is the admin
+        cursor.execute("""
+            SELECT p.post_id, p.user_id, p.event_id, p.post_content, p.post_time
+            FROM event_scheduling.posts p
+            JOIN event_scheduling.events_have_posts ep ON p.post_id = ep.post_id
+            JOIN event_scheduling.events e ON ep.event_id = e.event_id
+            LEFT JOIN event_scheduling.users_attend_events uae ON e.event_id = uae.event_id
+            WHERE (uae.user_id = %s OR e.admin_id = %s)
+            ORDER BY p.post_time DESC;
+        """, (username, username))
+        posts = cursor.fetchall()
+        
+        print(posts)
+
+        # Fetch user data
+        cursor.execute("SELECT * FROM event_scheduling.users WHERE user_id = %s;", (username,))
+        data = cursor.fetchall()
+
+        # Fetch friends data
+        friends = get_friends(username)
+
+        return render_template('feed.html', posts=posts, data=data, friends=friends)
+    except Exception as e:
+        flash(f'Error fetching feed: {e}', 'error')
+    finally:
+        cursor.close()
+        conn.close()
+
+    return redirect(url_for('index'))
 
 
 @app.route('/')
@@ -502,34 +591,41 @@ def index():
     conn = connect_to_db()
     cursor = conn.cursor()
 
-    # Fetch user data
-    cursor.execute("SELECT * FROM event_scheduling.users WHERE user_id = %s;", (username,))
-    data = cursor.fetchall()
+    try:
+        # Fetch user data
+        cursor.execute("SELECT * FROM event_scheduling.users WHERE user_id = %s;", (username,))
+        data = cursor.fetchall()
 
-    # Fetch events data where the user is an attendee but not an admin
-    cursor.execute("""
-        SELECT e.event_id, e.event_name, e.event_date, e.event_time
-        FROM event_scheduling.users_attend_events uae
-        JOIN event_scheduling.events e ON uae.event_id = e.event_id
-        WHERE uae.user_id = %s AND e.admin_id != %s;
-    """, (username, username))
-    user_events = cursor.fetchall()
+        # Fetch events data where the user is an attendee but not an admin
+        cursor.execute("""
+            SELECT e.event_id, e.event_name, e.event_date, e.event_time
+            FROM event_scheduling.users_attend_events uae
+            JOIN event_scheduling.events e ON uae.event_id = e.event_id
+            WHERE uae.user_id = %s AND e.admin_id != %s;
+        """, (username, username))
+        user_events = cursor.fetchall()
 
-    # Fetch events data where the user is the admin
-    cursor.execute("""
-        SELECT e.event_id, e.event_name, e.event_date, e.event_time
-        FROM event_scheduling.events e
-        WHERE e.admin_id = %s;
-    """, (username,))
-    created_events = cursor.fetchall()
+        # Fetch events data where the user is the admin
+        cursor.execute("""
+            SELECT e.event_id, e.event_name, e.event_date, e.event_time
+            FROM event_scheduling.events e
+            WHERE e.admin_id = %s;
+        """, (username,))
+        created_events = cursor.fetchall()
 
-    # Fetch friends data
-    friends = get_friends(username)
 
-    cursor.close()
-    conn.close()
+        # Fetch friends data
+        friends = get_friends(username)
 
-    return render_template('index.html', data=data, user_events=user_events, created_events=created_events, friends=friends)
+        return render_template('index.html', data=data, user_events=user_events, created_events=created_events, friends=friends)
+    except Exception as e:
+        flash(f'Error fetching data: {e}', 'error')
+    finally:
+        cursor.close()
+        conn.close()
+
+    return redirect(url_for('login'))
+
 
 def open_browser():
     webbrowser.open_new('http://127.0.0.1:5000/login')
