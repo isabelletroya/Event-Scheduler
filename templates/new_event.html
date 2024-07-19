@@ -7,8 +7,14 @@
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body>
+    
     <div class="container mt-5">
         <h1 class="text-center mb-4">New Event</h1>
+        {% if error %}
+        <div class="alert alert-danger" role="alert">
+            {{ error }}
+        </div>
+        {% endif %}
         <form action="{{ url_for('new_event') }}" method="post">
             <div class="form-group">
                 <label for="event_id">Event ID</label>
@@ -36,6 +42,8 @@
             </div>
             <button type="submit" class="btn btn-primary">Create Event</button>
         </form>
+        <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">Back to Dashboard</a>
+
     </div>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>

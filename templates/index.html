@@ -10,10 +10,20 @@
 </head>
 <body>
     <a href="{{ url_for('feed') }}" class="btn btn-primary mt-3">View Events Feed</a>
+    <a href="{{ url_for('logout') }}" class="btn btn-primary mt-3">Logout</a>
 
     <div class="container mt-5">
         <h1 class="text-center mb-4">My Events</h1>
         <td><a href="{{ url_for('edit_user_info') }}" class="btn btn-primary">Edit User Info</a></td>
+
+        {% if data %}
+            <div class="user-info mb-4">
+                <h2>User Information</h2>
+                <p><strong>Name:</strong> {{ data[0][0] }} <strong>Phone Number:</strong> {{ data[0][1] }} <strong>Birthday:</strong> {{ data[0][2] }} <strong>Email:</strong> {{ data[0][3] }}</p>
+            </div>
+        {% endif %}
+
+
         {% if user_events %}
             <table class="table table-bordered">
                 <thead class="thead-dark">
@@ -22,7 +32,6 @@
                         <th>Event Name</th>
                         <th>Event Date</th>
                         <th>Event Time</th>
-                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -32,30 +41,20 @@
                         <td>{{ event[1] }}</td>
                         <td>{{ event[2] }}</td>
                         <td>{{ event[3] }}</td>
-                        <td>
-                            <!-- Action buttons -->
-                            <a href="#" class="btn btn-primary">View Details</a>
-                        </td>
                     </tr>
                     <!-- Event card for creating posts -->
                     <tr>
-                        <td colspan="5">
+                        <td colspan="4">
                             <div class="event-card">
                                 <h3>{{ event[1] }}</h3>
                                 <p>Date: {{ event[2] }} Time: {{ event[3] }}</p>
-                                <!-- Ensure the action attribute points to the correct Flask endpoint -->
                                 <form id="postForm{{ event[0] }}" method="POST" action="{{ url_for('create_post') }}">
                                     <input type="hidden" name="event_id" value="{{ event[0] }}">
                                     <textarea name="post_content" placeholder="Write your post here..." rows="4" cols="50"></textarea>
                                     <br>
                                     <input type="submit" value="Create Post" class="btn btn-primary">
                                 </form>
-
                                 <hr>
-
-                             
-
-
                             </div>
                         </td>
                     </tr>
@@ -65,7 +64,7 @@
         {% else %}
             <p>No events found that you are attending.</p>
         {% endif %}
-    
+
         <h1 class="text-center mb-4">Events Created by You</h1>
         {% if created_events %}
             <table class="table table-bordered">
@@ -86,6 +85,22 @@
                         <td>{{ event[2] }}</td>
                         <td>{{ event[3] }}</td>
                         <td><a href="{{ url_for('edit_event', event_id=event[0]) }}" class="btn btn-primary">Edit Event</a></td>
+                    </tr>
+                    <!-- Event card for creating posts -->
+                    <tr>
+                        <td colspan="5">
+                            <div class="event-card">
+                                <h3>{{ event[1] }}</h3>
+                                <p>Date: {{ event[2] }} Time: {{ event[3] }}</p>
+                                <form id="postForm{{ event[0] }}" method="POST" action="{{ url_for('create_post') }}">
+                                    <input type="hidden" name="event_id" value="{{ event[0] }}">
+                                    <textarea name="post_content" placeholder="Write your post here..." rows="4" cols="50"></textarea>
+                                    <br>
+                                    <input type="submit" value="Create Post" class="btn btn-primary">
+                                </form>
+                                <hr>
+                            </div>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -127,14 +142,14 @@
         {% else %}
             <p>No friends found.</p>
         {% endif %}
-    
+
         <!-- Add Delete Account Button -->
         <form action="{{ url_for('delete_account') }}" method="post">
             <button type="submit" class="btn btn-danger mt-4">Delete Account</button>
         </form>
     </div>
 
-    <p class="mt-3">Create a <a href="{{ url_for('new_event') }}">New Event</a></p>
+    <p class="mt-3"><a href="{{ url_for('new_event') }}" class="btn btn-primary mt-3">Create a new Event</a></p>
 
     <!-- Add Bootstrap JS and dependencies -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
