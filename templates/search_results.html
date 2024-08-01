@@ -32,10 +32,10 @@
                     {% endfor %}
                 </tbody>
             </table>
-        {% else %}
+            {% else %}
             <p>No users found matching your search.</p>
-        {% endif %}
-        <p class="mt-3"><a href="{{ url_for('index') }}">Back to Dashboard</a></p>
-    </div>
-</body>
+            {% endif %}
+        </div>
+    </body>
+    <a href="{{ url_for('index') }}" class="btn btn-primary mt-3">Back to Dashboard</a>
 </html>

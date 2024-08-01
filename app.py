@@ -7,6 +7,7 @@ import string
 import secrets
 from datetime import datetime, date
 import bcrypt
+import logging
 
 
 app = Flask(__name__)
@@ -27,14 +28,14 @@ def connect_to_db():
     conn = psycopg2.connect(**db_config)
     return conn
 
-# Generate a random alphanumeric ID of given length
+# Generate a random alphanumeric ID of given length for event_id and post_id
 def generate_event_id():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
 
 def generate_random_id():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=10))
 
-# check that the info inputted is valid and correc within the user table
+# check that the info inputted is valid and correct within the user table
 def user_info_check(username, password):
     conn = connect_to_db()
     cursor = conn.cursor()
@@ -75,7 +76,7 @@ def new_event():
     if not username:
         return redirect(url_for('login'))
     
-    error = None  # Initialize error variable
+    error = None 
     event_id = generate_event_id()
     friends = []
 
@@ -113,7 +114,7 @@ def new_event():
             conn.commit()
 
         except Exception as e:
-            error = str(e)  # Capture the error message
+            error = str(e)  # get the error message
 
         finally:
             cursor.close()
@@ -126,7 +127,7 @@ def new_event():
 
         return redirect(url_for('index'))
 
-    # Fetch the list of friends for the user
+    # get the list of friends for the user
     friends = get_friends(username)
 
     return render_template('new_event.html', event_id=event_id, friends=friends, error=error)
@@ -136,7 +137,6 @@ def new_event():
 # login page logic
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    # global username
     error = None
     if request.method == 'POST':
         username = request.form['username']
@@ -156,6 +156,7 @@ def login():
 # logout the user
 @app.route('/logout')
 def logout():
+     # clears the sessions user
     session.pop('username', None)
     session.pop('admin_id', None)
     return redirect(url_for('login'))
@@ -163,7 +164,6 @@ def logout():
 # Registering for an account
 @app.route('/new_register', methods=['GET', 'POST'])
 def new_register():
-    # error = None
     if request.method == 'POST':
         user_id = request.form['user_id']
         password = request.form['password']
@@ -186,10 +186,6 @@ def new_register():
             today = datetime.today()
             age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
 
-            # if age < 15:
-            #     error = 'You must be at least 15 years old to register.'
-            #     return render_template('new_register.html', error=error)
-            
             # Insert into users table
             cursor.execute("""
             INSERT INTO event_scheduling.users (user_id, password, name, birthday, email, phone_number, age) 
@@ -200,22 +196,8 @@ def new_register():
             
             return redirect(url_for('login'))
         
-        # except psycopg2.IntegrityError as e:
-        #     conn.rollback()
-        #     if 'event_scheduling.check_user_id_exists' in str(e):
-        #         error = 'Username Unavailable. Please provide another.'
-        #     elif 'event_scheduling.check_phone_number_exists' in str(e):
-        #         error = 'Invalid phone number. Please try a new one.'
-        #     elif 'event_scheduling.check_email_exists' in str(e):
-        #         error = 'Email already exists. Please use a different email.'
-        #     elif 'event_scheduling.check_user_age' in str(e):
-        #         error = 'You must be at least 15 years old to register.'
-        #     else:
-        #         error = 'Error registering user: ' + str(e) 
-        #     return render_template('new_register.html', error=error)
-
         except Exception as e:
-            error = str(e)
+            error = str(e)  # get the error message
         finally:
             cursor.close()
             conn.close()
@@ -260,9 +242,10 @@ def delete_account():
         """, (username,))
 
         conn.commit()
+        # clears the sessions user
         session.pop('username', None)
     except Exception as e:
-        error = str(e)
+        error = str(e)  # get the error message
     finally:
         cursor.close()
         conn.close()
@@ -288,7 +271,7 @@ def delete_event(event_id):
         admin_id = cursor.fetchone()[0]
 
         if username != admin_id:
-            flash('You do not have permission to delete this event.', 'error')
+            error = 'You do not have permission to delete this event.', 'error'
             return redirect(url_for('index'))
 
         # Delete from users_attend_events table
@@ -299,7 +282,7 @@ def delete_event(event_id):
 
         conn.commit()
     except Exception as e:
-        error = str(e)
+        error = str(e)  # get the error message
     finally:
         cursor.close()
         conn.close()
@@ -313,7 +296,7 @@ def delete_event(event_id):
 @app.route('/edit_event/<event_id>', methods=['GET', 'POST'])
 def edit_event(event_id):
     username = session.get('username')
-    error = None  # Initialize error variable
+    error = None 
     event = None
     invited_members = []
     friends = get_friends(username)
@@ -351,7 +334,7 @@ def edit_event(event_id):
             conn.commit()
 
         except Exception as e:
-            error = str(e)  # Capture the error message
+            error = str(e)  # get the error message
 
         finally:
             cursor.close()
@@ -383,7 +366,7 @@ def edit_event(event_id):
             can_edit = (username == event[3])
 
     except Exception as e:
-        error = str(e)  # Capture the error message
+        error = str(e)  # get the error message
 
     finally:
         cursor.close()
@@ -394,6 +377,17 @@ def edit_event(event_id):
 @app.route('/edit_user_info', methods=['GET', 'POST'])
 def edit_user_info():
     username = session.get('username')
+    conn = connect_to_db()
+    cursor = conn.cursor()
+    cursor.execute("""
+    SELECT name, birthday, email, phone_number 
+    FROM event_scheduling.users 
+    WHERE user_id = %s;
+    """, (username,))
+    user = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    
     if request.method == 'POST':
         name = request.form['name']
         birthday = request.form['birthday']
@@ -420,27 +414,16 @@ def edit_user_info():
             return redirect(url_for('index'))
         
         except Exception as e:
-            error = str(e)  # Capture the error message
+            error = str(e)  # get the error message
 
         finally:
             cursor.close()
             conn.close()
-    
-    # GET method to display current user info
-    conn = connect_to_db()
-    cursor = conn.cursor()
-    cursor.execute("""
-    SELECT name, birthday, email, phone_number 
-    FROM event_scheduling.users 
-    WHERE user_id = %s;
-    """, (username,))
-    user = cursor.fetchone()
-    cursor.close()
-    conn.close()
+            
+        if error:
+            return render_template('edit_user_info.html', user=user, error=error)
 
-    return render_template('edit_user_info.html', user=user, error = error)
-
-
+    return render_template('edit_user_info.html', user=user)
 
 
 # look up friends within the database
@@ -507,7 +490,7 @@ def remove_friend(friend_id):
 
         conn.commit()
     except Exception as e:
-        error = str(e)
+        error = str(e)  # get the error message
     finally:
         cursor.close()
         conn.close()
@@ -544,7 +527,7 @@ def add_friend(friend_id):
         friend_name, friend_phone_number, friend_birthday = friend_info
         print(f"Retrieved friend info: {friend_info}")
 
-        # Check if friend_birthday is a string or datetime.date object and handle accordingly
+        # Check if friend_birthday is correct
         if isinstance(friend_birthday, date):
             friend_birth_date = friend_birthday
         else:
@@ -554,7 +537,7 @@ def add_friend(friend_id):
         friend_age = today.year - friend_birth_date.year - ((today.month, today.day) < (friend_birth_date.month, friend_birth_date.day))
         print(f"Calculated friend age: {friend_age}")
 
-        # Insert user_id, friend's name, friend_id, friend's age, and friend's phone number into the friends table
+        # Insert info into the friends table
         cursor.execute("""
             INSERT INTO event_scheduling.friends (user_id, name, friend_id, age, phone_number)
             VALUES (%s, %s, %s, %s, %s)
@@ -575,7 +558,7 @@ def add_friend(friend_id):
         conn.commit()
         
     except Exception as e:
-        error = str(e)
+        error = str(e)  # get the error message
     finally:
         cursor.close()
         conn.close()
@@ -584,7 +567,6 @@ def add_friend(friend_id):
         return render_template('index.html', error=error)
 
     return redirect(url_for('index'))
-import logging
 
 # creating posts for events
 @app.route('/create_post', methods=['POST'])
@@ -618,7 +600,7 @@ def create_post():
 
         flash('Post created successfully!', 'success')
     except Exception as e:
-        error = str(e)
+        error = str(e)  # get the error message
     finally:
         cursor.close()
         conn.close()
@@ -639,7 +621,6 @@ def feed():
 
     try:
         # getting posts from events where user is invited or is the admin
-                
         cursor.execute("""
         SELECT DISTINCT p.post_content, 
                         p.post_time, 
@@ -658,7 +639,7 @@ def feed():
 
         return render_template('feed.html', post=post)
     except Exception as e:
-            error = str(e)
+            error = str(e)  # get the error message
     finally:
         cursor.close()
         conn.close()
@@ -708,7 +689,7 @@ def index():
 
         return render_template('index.html', data=data, user_events=user_events, created_events=created_events, friends=friends)
     except Exception as e:
-            error = str(e)
+            error = str(e)  # get the error message
     finally:
         cursor.close()
         conn.close()
